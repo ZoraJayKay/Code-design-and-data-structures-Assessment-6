@@ -45,15 +45,15 @@ int main(int argc, char* argv[])
         */
 
     // ZORA: Create a named shared memory file map
-    HANDLE fileHandle = CreateFileMapping(
+    HANDLE fileHandle_01 = CreateFileMapping(
         INVALID_HANDLE_VALUE,	    // a handle to an existing virtual file, or invalid
         nullptr,				    // optional security attributes
         PAGE_READWRITE,			    // read/write access control
-        0, (sizeof(unsigned int) + app.GetArraySize()),		// ZORA: The memory needs of the virtual file, determined according to the combination of the size of the array inside the EntityEditorApp instance, plus an unsigned int which will tell the second application, numerically, how many objects to expect in the array
-        L"EntitySharedMemory");		// ZORA: The string name that the 2nd application will use to access the virtual file
+        0, sizeof(unsigned int),		// ZORA: The memory needs of the virtual file, determined according to the combination of the size of the array inside the EntityEditorApp instance, plus an unsigned int which will tell the second application, numerically, how many objects to expect in the array
+        L"IntSharedMemory");		// ZORA: The string name that the 2nd application will use to access the virtual file
     
     // ZORA: Where the creation of the file map fails, perform a debug printout
-    if (fileHandle == nullptr) {
+    if (fileHandle_01 == nullptr) {
 #ifndef NDEBUG
         std::cout << "Could not create file mapping object (application 1): " << GetLastError() << std::endl;
 #endif
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     */
     // ZORA: Make the volume of objects inside the array known to the other application
     unsigned int* size = (unsigned int*)MapViewOfFile(
-        fileHandle,             // ZORA: Target HANDLE
+        fileHandle_01,             // ZORA: Target HANDLE
         FILE_MAP_ALL_ACCESS,    // ZORA: Type of access, per CreateFileMapping
         0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
         0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
         std::cout << "Could not map view of file (for the size): " << GetLastError() << std::endl;
 #endif
         // ZORA: This is for identical, but even more important, reasons as file I/O closures
-        CloseHandle(fileHandle);
+        CloseHandle(fileHandle_01);
         return 1;
     }
 
@@ -94,13 +94,23 @@ int main(int argc, char* argv[])
 #endif
     }
 
+    UnmapViewOfFile(size);
+    CloseHandle(fileHandle_01);
+
+
+    HANDLE fileHandle_02 = CreateFileMapping(
+        INVALID_HANDLE_VALUE,	    // a handle to an existing virtual file, or invalid
+        nullptr,				    // optional security attributes
+        PAGE_READWRITE,			    // read/write access control
+        0, app.GetArraySize(),		// ZORA: The memory needs of the virtual file, determined according to the combination of the size of the array inside the EntityEditorApp instance, plus an unsigned int which will tell the second application, numerically, how many objects to expect in the array
+        L"ArraySharedMemory");		// ZORA: The string name that the 2nd application will use to access the virtual file
 
     // ZORA: Make the array of objects available to the other application
     Entity* data = (Entity*)MapViewOfFile(
-        fileHandle,             // ZORA: Target HANDLE
+        fileHandle_02,             // ZORA: Target HANDLE
         FILE_MAP_ALL_ACCESS,    // ZORA: Type of access, per CreateFileMapping
         0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-        sizeof(unsigned int),   // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
+        0,   // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
         app.GetArraySize());    // ZORA: The size of the named shared memory to map
 
     // ZORA: Where the creation of the pointer to view the file map fails, perform a debug printout
@@ -109,7 +119,7 @@ int main(int argc, char* argv[])
         std::cout << "Could not map view of file (for the array): " << GetLastError() << std::endl;
 #endif
         // ZORA: This is for identical, but even more important, reasons as file I/O closures
-        CloseHandle(fileHandle);
+        CloseHandle(fileHandle_02);
         return 1;
     }
 
@@ -121,6 +131,9 @@ int main(int argc, char* argv[])
 
     // ZORA: Set the file map pointer so that it points to the memory address of the object at the front of the array of Entities
     *data = app.ArrayOfEntities();
+
+    UnmapViewOfFile(data);
+    CloseHandle(fileHandle_02);
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
     // NAMED SHARED MEMORY SETUP FINISH ^^^^^
@@ -146,18 +159,6 @@ int main(int argc, char* argv[])
     //--------------------------------------------------------------------------------------   
     app.Shutdown();
     //--------------------------------------------------------------------------------------
-
-    // De-initialisation of the named shared memory
-    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    
-    // ZORA: Similar to closing a file, we must close the 'mapping' of an allocation of named shared memory. From the tute: "Unmapping the pointer doesn’t delete named shared memory, it simply invalidates the pointer’s access to the memory."
-    UnmapViewOfFile(size);
-    UnmapViewOfFile(data);
-
-    // ZORA: This is for identical, but even more important, reasons as file I/O closures
-    CloseHandle(fileHandle);
-
-    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     return 0;
 }

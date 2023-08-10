@@ -63,14 +63,13 @@ int main(int argc, char* argv[])
 
     The OpenFileMapping function DOES NOT know in advance the size of the shared memory which it is going to be accessing.
     */
-
-    HANDLE fileHandle = OpenFileMapping(
+    HANDLE fileHandle_01 = OpenFileMapping(
         FILE_MAP_ALL_ACCESS,            // ZORA: The access level we want this application to have, which could be full access, read only, write only, etc.
         FALSE,                          // ZORA: Determines whether or not processes created within this one will also be permitted to access the named shared memory. I'm not sure if this analogy is precise, but this seems to equate approximately to a protected/private access level.
-        L"EntitySharedMemory");         // ZORA: The name of the shared memory we wish to access. This must match the name from the creating application exactly.
+        L"IntSharedMemory");         // ZORA: The name of the shared memory we wish to access. This must match the name from the creating application exactly.
 
     // ZORA: Where the creation of the file map fails, perform a debug printout
-    if (fileHandle == nullptr) {
+    if (fileHandle_01 == nullptr) {
 #ifndef NDEBUG
         std::cout << "Could not create file mapping object (application 2): " << GetLastError() << std::endl;
 #endif
@@ -83,7 +82,7 @@ int main(int argc, char* argv[])
     DWORD arraySize = 0;
 
     unsigned int* size = (unsigned int*)MapViewOfFile(
-        fileHandle,             // ZORA: Target HANDLE
+        fileHandle_01,             // ZORA: Target HANDLE
         FILE_MAP_ALL_ACCESS,    // ZORA: Type of access, per CreateFileMapping
         0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
         0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
@@ -98,16 +97,24 @@ int main(int argc, char* argv[])
         std::cout << "Could not map view of file (for the size): " << GetLastError() << std::endl;
 #endif
         // ZORA: This is for identical, but even more important, reasons as file I/O closures
-        CloseHandle(fileHandle);
+        CloseHandle(fileHandle_01);
         return 1;
     }
 
+    UnmapViewOfFile(size);
+    CloseHandle(fileHandle_01);
+
+
+    HANDLE fileHandle_02 = OpenFileMapping(
+        FILE_MAP_ALL_ACCESS,            // ZORA: The access level we want this application to have, which could be full access, read only, write only, etc.
+        FALSE,                          // ZORA: Determines whether or not processes created within this one will also be permitted to access the named shared memory. I'm not sure if this analogy is precise, but this seems to equate approximately to a protected/private access level.
+        L"ArraySharedMemory");         // ZORA: The name of the shared memory we wish to access. This must match the name from the creating application exactly.
 
     Entity* data = (Entity*)MapViewOfFile(
-        fileHandle,                     // ZORA: Our target HANDLE
+        fileHandle_02,                     // ZORA: Our target HANDLE
         FILE_MAP_ALL_ACCESS,            // ZORA: The type of access, per CreateFileMapping and OpenFileMapping.
         0,                              // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-        sizeof(unsigned int),           // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
+        0,           // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
         sizeof(Entity) * arraySize);    // ZORA: The size of the named shared memory 
 
     // ZORA: Where the creation of the pointer to view the file map fails, perform a debug printout
@@ -116,7 +123,7 @@ int main(int argc, char* argv[])
         std::cout << "Could not map view of file (for the array): " << GetLastError() << std::endl;
 #endif
         // ZORA: This is for identical, but even more important, reasons as file I/O closures
-        CloseHandle(fileHandle);
+        CloseHandle(fileHandle_02);
         return 1;
     }
 
@@ -128,6 +135,9 @@ int main(int argc, char* argv[])
 #ifndef NDEBUG
     std::cout << "Array transferred successfully." << std::endl;
 #endif
+
+    UnmapViewOfFile(data);
+    CloseHandle(fileHandle_02);
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
     // NAMED SHARED MEMORY SETUP FINISH ^^^^^
@@ -159,11 +169,11 @@ int main(int argc, char* argv[])
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     // ZORA: Similar to closing a file, we must close the 'mapping' of an allocation of named shared memory. From the tute: "Unmapping the pointer doesn’t delete named shared memory, it simply invalidates the pointer’s access to the memory."
-    UnmapViewOfFile(size);
+    //UnmapViewOfFile(size);
     UnmapViewOfFile(data);
 
     // ZORA: This is for identical, but even more important, reasons as file I/O closures
-    CloseHandle(fileHandle);
+    //CloseHandle(fileHandle);
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
