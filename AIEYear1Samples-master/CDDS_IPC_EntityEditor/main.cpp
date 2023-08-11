@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
     }
 
     UnmapViewOfFile(size);
-    CloseHandle(fileHandle_01);
+    
 
 
     HANDLE fileHandle_02 = CreateFileMapping(
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     *data = app.ArrayOfEntities();
 
     UnmapViewOfFile(data);
-    CloseHandle(fileHandle_02);
+    
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
     // NAMED SHARED MEMORY SETUP FINISH ^^^^^
@@ -159,6 +159,9 @@ int main(int argc, char* argv[])
     //--------------------------------------------------------------------------------------   
     app.Shutdown();
     //--------------------------------------------------------------------------------------
+
+    CloseHandle(fileHandle_01);
+    CloseHandle(fileHandle_02);
 
     return 0;
 }
