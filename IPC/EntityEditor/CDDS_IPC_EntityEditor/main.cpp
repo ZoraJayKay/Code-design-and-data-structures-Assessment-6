@@ -104,36 +104,7 @@ int main(int argc, char* argv[])
         PAGE_READWRITE,			    // read/write access control
         0, size_t(app.GetArraySize()),		// ZORA: The memory needs of the virtual file, determined according to the combination of the size of the array inside the EntityEditorApp instance, plus an unsigned int which will tell the second application, numerically, how many objects to expect in the array
         L"ArraySharedMemory");		// ZORA: The string name that the 2nd application will use to access the virtual file
-//
-//    // ZORA: Make the array of objects available to the other application
-//    Entity* data = (Entity*)MapViewOfFile(
-//        fileHandle_02,             // ZORA: Target HANDLE
-//        FILE_MAP_ALL_ACCESS,    // ZORA: Type of access, per CreateFileMapping
-//        0,                      // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-//        0,   // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-//        app.GetArraySize());    // ZORA: The size of the named shared memory to map
-//
-//    // ZORA: Where the creation of the pointer to view the file map fails, perform a debug printout
-//    if (data == nullptr) {
-//#ifndef NDEBUG
-//        std::cout << "Could not map view of file (for the array): " << GetLastError() << std::endl;
-//#endif
-//        // ZORA: This is for identical, but even more important, reasons as file I/O closures
-//        CloseHandle(fileHandle_02);
-//        return 1;
-//    }
-//
-//    else {
-//#ifndef NDEBUG
-//        std::cout << "Map viewed successfully (array)." << std::endl;
-//#endif
-//    }
-//
-//    // ZORA: Set the file map pointer so that it points to the memory address of the object at the front of the array of Entities
-//    *data = app.ArrayOfEntities();
 
-    
-    
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
     // NAMED SHARED MEMORY SETUP FINISH ^^^^^

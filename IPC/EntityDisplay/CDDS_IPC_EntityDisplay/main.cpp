@@ -109,34 +109,6 @@ int main(int argc, char* argv[])
         FILE_MAP_ALL_ACCESS,            // ZORA: The access level we want this application to have, which could be full access, read only, write only, etc.
         FALSE,                          // ZORA: Determines whether or not processes created within this one will also be permitted to access the named shared memory. I'm not sure if this analogy is precise, but this seems to equate approximately to a protected/private access level.
         L"ArraySharedMemory");         // ZORA: The name of the shared memory we wish to access. This must match the name from the creating application exactly.
-
-//    Entity* data = (Entity*)MapViewOfFile(
-//        fileHandle_02,                     // ZORA: Our target HANDLE
-//        FILE_MAP_ALL_ACCESS,            // ZORA: The type of access, per CreateFileMapping and OpenFileMapping.
-//        0,                              // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-//        0,           // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-//        sizeof(Entity) * arraySize);    // ZORA: The size of the named shared memory 
-//
-//    // ZORA: Where the creation of the pointer to view the file map fails, perform a debug printout
-//    if (data == nullptr) {
-//#ifndef NDEBUG
-//        std::cout << "Could not map view of file (for the array): " << GetLastError() << std::endl;
-//#endif
-//        // ZORA: This is for identical, but even more important, reasons as file I/O closures
-//        CloseHandle(fileHandle_02);
-//        return 1;
-//    }
-//
-//    // Populate the array in this application with each of the elements inside the array of the shared memory.
-//    for (int i = 0; i < arraySize; i++) {
-//        app.GetArray().push_back(data[i]);
-//    }
-//
-//#ifndef NDEBUG
-//    std::cout << "Array transferred successfully." << std::endl;
-//#endif
-
-//    UnmapViewOfFile(data);
     
 
     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
@@ -158,9 +130,9 @@ int main(int argc, char* argv[])
         Entity* data = (Entity*)MapViewOfFile(
             fileHandle_02,                  // ZORA: Our target HANDLE
             FILE_MAP_ALL_ACCESS,            // ZORA: The type of access, per CreateFileMapping and OpenFileMapping.
-            0,                              // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-            0,           // ZORA: Offset within the memory allocation of the named shared memory for dynamic or selective access to a specific area in the target memory.
-            size_t(sizeof(Entity) * arraySize));    // ZORA: The size of the named shared memory 
+            0,                              // ZORA: Offset within the memory allocation of the named shared memory 
+            0,                              // ZORA: Offset within the memory allocation of the named shared memory 
+            sizeof(Entity) * arraySize);    // ZORA: The size of the named shared memory 
 
         // ZORA: Where the creation of the pointer to view the file map fails, perform a debug printout
         if (data == nullptr) {
@@ -174,8 +146,7 @@ int main(int argc, char* argv[])
 
         // Populate the array in this application with each of the elements inside the array of the shared memory.
         for (int i = 0; i < arraySize; i++) {
-            //app.GetArray().push_back(data[i]);
-            app.m_entities[i] = data[i];
+            app.m_entities.push_back(data[i]);
         }
 
 
@@ -218,7 +189,7 @@ int main(int argc, char* argv[])
         app.Draw();
         //----------------------------------------------------------------------------------
 
-        app.GetArray().clear();
+        app.m_entities.clear();
 
         UnmapViewOfFile(data);
     }
